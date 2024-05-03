@@ -1,0 +1,98 @@
+{
+  "project_info": {
+    "project_number": "43724375884",
+    "project_id": "pocket-buddy-954e6",
+    "storage_bucket": "pocket-buddy-954e6.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:43724375884:android:2eecb91d3528b02b75b1e9",
+        "android_client_info": {
+          "package_name": "com.example.pocket_buddy_new"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "43724375884-rt7716jndeq5f5n3abiql28jgqm3g4n1.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.pocket_buddy_new",
+            "certificate_hash": "373333efb68e5419f58a35742111643420c8fde3"
+          }
+        },
+        {
+          "client_id": "43724375884-lc79cc3g4mnoipk34k0bb8ojnhr7cn4r.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAdwijfGOsE3Ge8kdX-jx5pIh1Fsl8-cIk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "43724375884-lc79cc3g4mnoipk34k0bb8ojnhr7cn4r.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "43724375884-f6650nmf6pru174ttak74h6h3960codm.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.pocketBuddyNew"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:43724375884:android:3bbb3009151068c775b1e9",
+        "android_client_info": {
+          "package_name": "com.web.pocketbuddy"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "43724375884-cvp8276hbcq8gbjkprjdso9514gk1khu.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.web.pocketbuddy",
+            "certificate_hash": "373333efb68e5419f58a35742111643420c8fde3"
+          }
+        },
+        {
+          "client_id": "43724375884-lc79cc3g4mnoipk34k0bb8ojnhr7cn4r.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAdwijfGOsE3Ge8kdX-jx5pIh1Fsl8-cIk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "43724375884-lc79cc3g4mnoipk34k0bb8ojnhr7cn4r.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "43724375884-f6650nmf6pru174ttak74h6h3960codm.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.pocketBuddyNew"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
