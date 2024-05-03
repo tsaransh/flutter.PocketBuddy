@@ -179,7 +179,7 @@ class _AuthScreenState extends State<AuthScreen> {
                                       .copyWith(
                                         color: Theme.of(context)
                                             .colorScheme
-                                            .onBackground,
+                                            .background,
                                       ),
                                 ),
                               )

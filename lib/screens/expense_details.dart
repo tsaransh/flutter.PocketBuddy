@@ -125,9 +125,10 @@ class _ExpenseDetailState extends State<ExpenseDetail> {
                         ),
                         ElevatedButton.icon(
                           style: ElevatedButton.styleFrom(
-                            foregroundColor: Colors.white,
+                            foregroundColor:
+                                Theme.of(context).colorScheme.background,
                             backgroundColor:
-                                Theme.of(context).colorScheme.inverseSurface,
+                                Theme.of(context).colorScheme.secondary,
                             padding: const EdgeInsets.all(12),
                           ),
                           onPressed: _updateExpenseData,
@@ -147,13 +148,16 @@ class _ExpenseDetailState extends State<ExpenseDetail> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color.fromARGB(255, 202, 201, 201).withOpacity(0.9),
+        color: const Color.fromARGB(255, 94, 92, 92).withOpacity(0.9),
         borderRadius: const BorderRadius.all(
           Radius.circular(25),
         ),
       ),
       width: double.infinity,
       child: TextFormField(
+        style: TextStyle(
+          color: Theme.of(context).colorScheme.onBackground,
+        ),
         initialValue: value,
         readOnly: true,
         decoration: InputDecoration(
@@ -176,7 +180,7 @@ class _ExpenseDetailState extends State<ExpenseDetail> {
       width: double.infinity,
       child: TextFormField(
         style: TextStyle(
-          color: Theme.of(context).colorScheme.background,
+          color: Theme.of(context).colorScheme.onBackground,
         ),
         controller: controller,
         decoration: InputDecoration(

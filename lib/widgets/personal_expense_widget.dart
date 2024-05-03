@@ -334,7 +334,7 @@ class _PersonalExpenseScreenState extends State<PersonalExpenseScreen> {
                                       margin: const EdgeInsets.only(bottom: 12),
                                       padding: const EdgeInsets.all(16),
                                       width: double.infinity,
-                                      height: 80,
+                                      height: 90,
                                       decoration: BoxDecoration(
                                         color: index % 2 == 0
                                             ? Theme.of(context)

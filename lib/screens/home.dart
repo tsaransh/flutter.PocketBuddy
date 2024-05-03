@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
+import 'package:pocket_buddy_new/widgets/join_group_details.dart';
 import 'package:pocket_buddy_new/widgets/personal_expense_widget.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -16,29 +17,19 @@ class _PersonalHomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Pocket Buddy'),
-        actions: <Widget>[
-          TextButton(
-              onPressed: () {
-                FirebaseAuth.instance.signOut();
-              },
-              child: Icon(
-                Icons.logout,
-                color: Theme.of(context).colorScheme.background,
-              )),
-          if (_selectedNavIndex + 1 == 2)
-            const Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.search),
-                SizedBox(width: 36),
-                Icon(Icons.add),
-                SizedBox(width: 24),
+      appBar: _selectedNavIndex + 1 != 2
+          ? AppBar(
+              title: const Text('Pocket Buddy'),
+              actions: [
+                IconButton(
+                  onPressed: () {
+                    FirebaseAuth.instance.signOut();
+                  },
+                  icon: const Icon(Icons.logout),
+                )
               ],
             )
-        ],
-      ),
+          : null,
       bottomNavigationBar: Container(
         color: Theme.of(context).colorScheme.inversePrimary,
         child: Padding(
@@ -84,7 +75,7 @@ class _PersonalHomeScreenState extends State<HomeScreen> {
     if ((_selectedNavIndex + 1) == 1) {
       return const PersonalExpenseScreen();
     } else if ((_selectedNavIndex + 1) == 2) {
-      // return _buildGroupExpense();
+      return const JoinGroupScreen();
     } else if ((_selectedNavIndex + 1) == 3) {
       // return _buildSettings();
     } else if ((_selectedNavIndex + 1) == 4) {

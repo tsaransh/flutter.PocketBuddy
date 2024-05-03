@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:pocket_buddy_new/model/expense_room.dart';
 
-class GroupHomeScreen extends StatefulWidget {
-  const GroupHomeScreen({super.key});
+class RoomScreen extends StatefulWidget {
+  const RoomScreen({super.key, required this.room});
 
+  final ExpenseRoom room;
   @override
-  State<GroupHomeScreen> createState() => _GroupHomeScreenState();
+  State<RoomScreen> createState() => _GroupHomeScreenState();
 }
 
-class _GroupHomeScreenState extends State<GroupHomeScreen> {
+class _GroupHomeScreenState extends State<RoomScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Pocket Buddy'),
-      ),
+      appBar: AppBar(title: Text('${widget.room.groupTitle}')),
     );
   }
 }
