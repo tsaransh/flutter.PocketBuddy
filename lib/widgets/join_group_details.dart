@@ -2,8 +2,10 @@
 
 import 'dart:convert';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:pocket_buddy_new/model/expense_room.dart';
 import 'package:pocket_buddy_new/model/rest_api_url.dart';
 import 'package:pocket_buddy_new/model/user_join_group_details.dart';
@@ -45,10 +47,10 @@ class _JoinGroupScreenState extends State<JoinGroupScreen> {
   void initState() {
     super.initState();
     _currentUser = FirebaseAuth.instance.currentUser!.uid;
-    _fetchJoinGroupDate();
+    _fetchJoinGroupData();
   }
 
-  _fetchJoinGroupDate() async {
+  _fetchJoinGroupData() async {
     _userJoinGroupList = [];
 
     final url = Uri.parse('$_url/getUserJoinGroups?userUid=$_currentUser');
@@ -69,7 +71,7 @@ class _JoinGroupScreenState extends State<JoinGroupScreen> {
         }
       }
     } catch (error) {
-      print(error);
+      _showError('failed to fetch group');
     } finally {
       setState(() {
         _isFetching = false;
@@ -122,7 +124,13 @@ class _JoinGroupScreenState extends State<JoinGroupScreen> {
                             children: [
                               Text(
                                 _userJoinGroupList![index].groupTitle,
-                                style: Theme.of(context).textTheme.titleMedium,
+                                style: GoogleFonts.abhayaLibre(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onBackground,
+                                  fontWeight: FontWeight.w500,
+                                  fontSize: 20,
+                                ),
                               ),
                               const Icon(Icons.arrow_forward_rounded),
                             ],
@@ -194,13 +202,15 @@ class _JoinGroupScreenState extends State<JoinGroupScreen> {
 
     if (response.statusCode == 200) {
       final responseData = json.decode(response.body);
-      print(responseData);
+
       final room = ExpenseRoom(
-          groupId: responseData['groupId'],
-          groupTitle: responseData['groupTitle'],
-          createdDate: DateTime.parse(responseData['createdDate']),
-          userUid: responseData['userUid'],
-          username: responseData['userUid']);
+        groupId: responseData['groupId'],
+        groupTitle: responseData['groupTitle'],
+        createdDate: DateTime.parse(responseData['createdDate']),
+        userUid: responseData['userUid'],
+        username: responseData['creatorName'],
+        roomDescription: '',
+      );
 
       return room;
     }
@@ -209,11 +219,11 @@ class _JoinGroupScreenState extends State<JoinGroupScreen> {
         groupTitle: '',
         createdDate: DateTime.now(),
         userUid: '',
-        username: '');
+        username: '',
+        roomDescription: '');
   }
 
   _joinGroup() async {
-    print('btn clicked');
     String groupId = _serchController.text;
     if (groupId.isNotEmpty) {
       try {
@@ -224,13 +234,13 @@ class _JoinGroupScreenState extends State<JoinGroupScreen> {
               Uri.parse('$_url/join?groupId=$groupId&userUid=$_currentUser');
           final joinResponse = await http.get(url);
           if (joinResponse.statusCode == 200) {
-            _fetchJoinGroupDate();
+            _fetchJoinGroupData();
           }
         } else {
-          print('No room found');
+          _showError('No room found');
         }
-      } on Exception catch (error) {
-        print('Error: $error');
+      } catch (error) {
+        _showError('failed to join room');
       } finally {
         Navigator.of(context).pop();
       }
@@ -297,6 +307,27 @@ class _JoinGroupScreenState extends State<JoinGroupScreen> {
     );
   }
 
+  getName() async {
+    try {
+      String? name;
+      User? user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        name = user.displayName;
+        if (name == null || name.isEmpty) {
+          final data = await FirebaseFirestore.instance
+              .collection('users')
+              .doc(FirebaseAuth.instance.currentUser!.uid)
+              .get();
+
+          name = data['firstname'] + " " + data['lastname'];
+        }
+      }
+      return name;
+    } catch (e) {
+      _showError('something went wrong');
+    }
+  }
+
   _createRoom() async {
     String groupTitle = _titleController.text;
     if (groupTitle.isEmpty) {
@@ -311,6 +342,8 @@ class _JoinGroupScreenState extends State<JoinGroupScreen> {
     final createUrl = Uri.parse('$_url/create');
 
     try {
+      String name = await getName();
+      print(name);
       final response = await http.post(
         createUrl,
         headers: <String, String>{"Content-Type": "application/json"},
@@ -318,22 +351,24 @@ class _JoinGroupScreenState extends State<JoinGroupScreen> {
           {
             "userUid": _currentUser,
             "groupTitle": groupTitle,
+            "creatorName": name.toString(),
           },
         ),
       );
 
       if (response.statusCode == 201) {
         final responseData = json.decode(response.body);
-
-        // :TODO fetch the username of the current user
+        print(responseData);
 
         final room = ExpenseRoom(
-            groupId: responseData['groupDetails']['groupId'],
-            groupTitle: responseData['groupDetails']['groupTitle'],
-            createdDate:
-                DateTime.parse(responseData['groupDetails']['createdDate']),
-            userUid: responseData['groupDetails']['userUid'],
-            username: responseData['groupDetails']['userUid']);
+          groupId: responseData['groupDetails']['groupId'],
+          groupTitle: responseData['groupDetails']['groupTitle'],
+          createdDate:
+              DateTime.parse(responseData['groupDetails']['createdDate']),
+          userUid: responseData['groupDetails']['userUid'],
+          username: responseData['groupDetails']['creatorName'],
+          roomDescription: '',
+        );
 
         Navigator.of(context).pop();
         Navigator.of(context).push(
@@ -343,11 +378,27 @@ class _JoinGroupScreenState extends State<JoinGroupScreen> {
             ),
           ),
         );
+        _fetchJoinGroupData();
       }
     } catch (error) {
-      print(error);
+      print("Error Creating: $error");
+      _showError('failed to create room');
     } finally {
       _titleController.clear();
     }
+  }
+
+  _showError(String errorMessage) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(errorMessage),
+        action: SnackBarAction(
+          label: 'Okay',
+          onPressed: () {
+            ScaffoldMessenger.of(context).clearSnackBars();
+          },
+        ),
+      ),
+    );
   }
 }

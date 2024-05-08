@@ -201,240 +201,241 @@ class _PersonalExpenseScreenState extends State<PersonalExpenseScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return !_fetching
-        ? Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(6),
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
-                  width: double.infinity,
-                  height: 150,
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(colors: [
-                      Color.fromARGB(255, 189, 158, 132),
-                      Color.fromARGB(255, 28, 139, 126)
-                    ], begin: Alignment.topLeft, end: Alignment.bottomRight),
-                    borderRadius: BorderRadius.all(
-                      Radius.circular(20),
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Pocket Buddy'),
+        actions: [
+          PopupMenuButton(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(25),
+            ),
+            itemBuilder: (context) => [
+              PopupMenuItem(
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => const FetchStatement(),
                     ),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Expense Amount',
-                        style: GoogleFonts.abhayaLibre(
-                          color: Theme.of(context).colorScheme.background,
-                          fontWeight: FontWeight.w500,
-                          fontSize: 18,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            "₹ $_totalSum",
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleLarge!
-                                .copyWith(
-                                  color:
-                                      Theme.of(context).colorScheme.background,
-                                ),
-                          ),
-                          Column(
-                            mainAxisAlignment: MainAxisAlignment.spaceAround,
-                            children: [
-                              Text(
-                                'Last Month',
-                                style: GoogleFonts.actor(
-                                  color:
-                                      Theme.of(context).colorScheme.background,
-                                ),
-                              ),
-                              Text(
-                                '₹ $_lastDaysSum',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .titleMedium!
-                                    .copyWith(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .background,
-                                    ),
-                              ),
-                            ],
-                          )
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      Center(
-                        child: TextButton.icon(
-                          onPressed: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (context) => const FetchStatement(),
-                              ),
-                            );
-                          },
-                          icon: Image.asset(
-                            'assets/logo/statement.png',
-                            width: 26,
-                            errorBuilder: (context, error, stackTrace) {
-                              return const Text('logo');
-                            },
-                          ),
-                          label: Text(
-                            'Statements',
-                            textAlign: TextAlign.center,
-                            style: GoogleFonts.aBeeZee(
-                              color: Theme.of(context).colorScheme.background,
-                            ),
-                          ),
-                        ),
-                      )
-                    ],
-                  ),
-                ),
-              ),
-              Expanded(
-                child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
-                  child: Column(
-                    children: [
-                      Expanded(
-                        child: _expenseList.isEmpty
-                            ? const Center(
-                                child: Text('Oops no expense found!'),
-                              )
-                            : ListView.builder(
-                                shrinkWrap: true,
-                                itemCount: _expenseList.length,
-                                itemBuilder: (context, index) {
-                                  return GestureDetector(
-                                    onLongPress: () {
-                                      _showDeleteDialog(_expenseList[index]);
-                                    },
-                                    onTap: () {
-                                      Navigator.of(context)
-                                          .push(MaterialPageRoute(
-                                        builder: (context) => ExpenseDetail(
-                                          expense: _expenseList[index],
-                                          deleteExpense: _deleteExpense,
-                                          refershData: _fetchDataFromDb,
-                                        ),
-                                      ));
-                                    },
-                                    child: Container(
-                                      margin: const EdgeInsets.only(bottom: 12),
-                                      padding: const EdgeInsets.all(16),
-                                      width: double.infinity,
-                                      height: 90,
-                                      decoration: BoxDecoration(
-                                        color: index % 2 == 0
-                                            ? Theme.of(context)
-                                                .colorScheme
-                                                .secondaryContainer
-                                            : Theme.of(context)
-                                                .colorScheme
-                                                .secondary,
-                                        borderRadius: const BorderRadius.all(
-                                          Radius.circular(20),
-                                        ),
-                                      ),
-                                      child: Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          Text(
-                                            _expenseList[index].expenseTitle,
-                                            style: GoogleFonts.aBeeZee(
-                                              color: index % 2 == 0
-                                                  ? Theme.of(context)
-                                                      .colorScheme
-                                                      .onSurface
-                                                  : Theme.of(context)
-                                                      .colorScheme
-                                                      .surface,
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.w500,
-                                            ),
-                                          ),
-                                          Column(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.spaceEvenly,
-                                            children: [
-                                              Text(
-                                                '₹ ${_expenseList[index].expenseAmount}',
-                                                style: GoogleFonts.abrilFatface(
-                                                  color: index % 2 == 0
-                                                      ? Theme.of(context)
-                                                          .colorScheme
-                                                          .onSurface
-                                                      : Theme.of(context)
-                                                          .colorScheme
-                                                          .surface,
-                                                  fontSize: 18,
-                                                ),
-                                              ),
-                                              Text(
-                                                DateFormat('dd-MM-yyyy').format(
-                                                    _expenseList[index]
-                                                        .expenseDate!),
-                                                style: Theme.of(context)
-                                                    .textTheme
-                                                    .bodyLarge!
-                                                    .copyWith(
-                                                      color: index % 2 == 0
-                                                          ? Theme.of(context)
-                                                              .colorScheme
-                                                              .onSurface
-                                                          : Theme.of(context)
-                                                              .colorScheme
-                                                              .surface,
-                                                    ),
-                                              )
-                                            ],
-                                          )
-                                        ],
-                                      ),
-                                    ),
-                                  );
-                                },
-                              ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.only(top: 8, right: 16),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                padding: const EdgeInsets.all(16),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(50),
-                                ),
-                              ),
-                              onPressed: _showAddExpense,
-                              child: const Icon(Icons.add),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                  );
+                },
+                child: const Text('Statements'),
               ),
             ],
-          )
-        : const Center(
-            child: CircularProgressIndicator(),
-          );
+          ),
+        ],
+      ),
+      body: !_fetching
+          ? Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(6),
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
+                    width: double.infinity,
+                    height: 120,
+                    decoration: const BoxDecoration(
+                      gradient: LinearGradient(colors: [
+                        Color.fromARGB(255, 189, 158, 132),
+                        Color.fromARGB(255, 28, 139, 126)
+                      ], begin: Alignment.topLeft, end: Alignment.bottomRight),
+                      borderRadius: BorderRadius.all(
+                        Radius.circular(20),
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Expense Amount',
+                          style: GoogleFonts.abhayaLibre(
+                            color: Theme.of(context).colorScheme.background,
+                            fontWeight: FontWeight.w500,
+                            fontSize: 20,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              "₹ $_totalSum",
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleLarge!
+                                  .copyWith(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .background,
+                                  ),
+                            ),
+                            Column(
+                              mainAxisAlignment: MainAxisAlignment.spaceAround,
+                              children: [
+                                Text(
+                                  'Last Month',
+                                  style: GoogleFonts.actor(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .background,
+                                  ),
+                                ),
+                                Text(
+                                  '₹ $_lastDaysSum',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .titleMedium!
+                                      .copyWith(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .background,
+                                      ),
+                                ),
+                              ],
+                            )
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Padding(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
+                    child: Column(
+                      children: [
+                        Expanded(
+                          child: _expenseList.isEmpty
+                              ? const Center(
+                                  child: Text('Oops no expense found!'),
+                                )
+                              : ListView.builder(
+                                  shrinkWrap: true,
+                                  itemCount: _expenseList.length,
+                                  itemBuilder: (context, index) {
+                                    return GestureDetector(
+                                      onLongPress: () {
+                                        _showDeleteDialog(_expenseList[index]);
+                                      },
+                                      onTap: () {
+                                        Navigator.of(context)
+                                            .push(MaterialPageRoute(
+                                          builder: (context) => ExpenseDetail(
+                                            expense: _expenseList[index],
+                                            deleteExpense: _deleteExpense,
+                                            refershData: _fetchDataFromDb,
+                                          ),
+                                        ));
+                                      },
+                                      child: Container(
+                                        margin:
+                                            const EdgeInsets.only(bottom: 12),
+                                        padding: const EdgeInsets.all(16),
+                                        width: double.infinity,
+                                        height: 90,
+                                        decoration: BoxDecoration(
+                                          color: index % 2 == 0
+                                              ? Theme.of(context)
+                                                  .colorScheme
+                                                  .secondaryContainer
+                                              : Theme.of(context)
+                                                  .colorScheme
+                                                  .secondary,
+                                          borderRadius: const BorderRadius.all(
+                                            Radius.circular(20),
+                                          ),
+                                        ),
+                                        child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Text(
+                                              _expenseList[index].expenseTitle,
+                                              style: GoogleFonts.aBeeZee(
+                                                color: index % 2 == 0
+                                                    ? Theme.of(context)
+                                                        .colorScheme
+                                                        .onSurface
+                                                    : Theme.of(context)
+                                                        .colorScheme
+                                                        .surface,
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                            Column(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.spaceEvenly,
+                                              children: [
+                                                Text(
+                                                  '₹ ${_expenseList[index].expenseAmount}',
+                                                  style:
+                                                      GoogleFonts.abrilFatface(
+                                                    color: index % 2 == 0
+                                                        ? Theme.of(context)
+                                                            .colorScheme
+                                                            .onSurface
+                                                        : Theme.of(context)
+                                                            .colorScheme
+                                                            .surface,
+                                                    fontSize: 18,
+                                                  ),
+                                                ),
+                                                Text(
+                                                  DateFormat('dd-MM-yyyy')
+                                                      .format(
+                                                          _expenseList[index]
+                                                              .expenseDate!),
+                                                  style: Theme.of(context)
+                                                      .textTheme
+                                                      .bodyLarge!
+                                                      .copyWith(
+                                                        color: index % 2 == 0
+                                                            ? Theme.of(context)
+                                                                .colorScheme
+                                                                .onSurface
+                                                            : Theme.of(context)
+                                                                .colorScheme
+                                                                .surface,
+                                                      ),
+                                                )
+                                              ],
+                                            )
+                                          ],
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8, right: 16),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  padding: const EdgeInsets.all(16),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(50),
+                                  ),
+                                ),
+                                onPressed: _showAddExpense,
+                                child: const Icon(Icons.add),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            )
+          : const Center(child: CircularProgressIndicator()),
+    );
   }
 
   _showDeleteDialog(PersonalExpense expense) {

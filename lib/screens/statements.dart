@@ -117,8 +117,22 @@ class _FetchStatementState extends State<FetchStatement> {
         }
       }
     } catch (error) {
-      print(error);
+      showError('something went wrong');
     }
+  }
+
+  showError(String error) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(error),
+        action: SnackBarAction(
+            label: 'Okay',
+            textColor: Colors.white,
+            onPressed: () {
+              ScaffoldMessenger.of(context).clearSnackBars();
+            }),
+      ),
+    );
   }
 
   _generatePdf() async {
@@ -163,7 +177,7 @@ class _FetchStatementState extends State<FetchStatement> {
       document.dispose();
       _saveAndLaunchFile(bytes, '$_currentUser');
     } catch (e) {
-      print("error: $e");
+      showError('Failed to generate PDF');
     }
   }
 
@@ -174,7 +188,7 @@ class _FetchStatementState extends State<FetchStatement> {
       await file.writeAsBytes(bytes, flush: true);
       OpenFile.open('$path/$fileName.pdf');
     } catch (e) {
-      print("error: $e");
+      showError('Oop something went wrong');
     }
   }
 

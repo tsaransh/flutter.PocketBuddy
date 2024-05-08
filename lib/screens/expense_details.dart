@@ -1,3 +1,5 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -63,12 +65,26 @@ class _ExpenseDetailState extends State<ExpenseDetail> {
         widget.refershData();
       }
     } catch (error) {
-      print(error);
+      showError("filed to update data");
     } finally {
       setState(() {
         _updatingExpense = true;
       });
     }
+  }
+
+  showError(String error) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(error),
+        action: SnackBarAction(
+            label: 'Okay',
+            textColor: Colors.white,
+            onPressed: () {
+              ScaffoldMessenger.of(context).clearSnackBars();
+            }),
+      ),
+    );
   }
 
   @override

@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:pocket_buddy_new/widgets/create_account.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -16,6 +17,8 @@ class _AuthScreenState extends State<AuthScreen> {
 
   bool isHiding = true;
 
+  late UserCredential userCredentials;
+
   // login variables
   late String _email;
   late String _password;
@@ -29,9 +32,8 @@ class _AuthScreenState extends State<AuthScreen> {
     _formKey.currentState!.save();
 
     try {
-      // ignore: unused_local_variable
-      UserCredential userCredentials = await firebaseAuth
-          .signInWithEmailAndPassword(email: _email, password: _password);
+      userCredentials = await firebaseAuth.signInWithEmailAndPassword(
+          email: _email, password: _password);
     } catch (error) {
       _showError(error.toString());
     } finally {
@@ -69,14 +71,13 @@ class _AuthScreenState extends State<AuthScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       resizeToAvoidBottomInset: false,
-      body: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const SizedBox(height: 64),
-          Expanded(
-            child: SingleChildScrollView(
+      body: SingleChildScrollView(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const SizedBox(height: 56),
+            SingleChildScrollView(
               child: Column(
-                mainAxisSize: MainAxisSize.min,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(
@@ -151,7 +152,7 @@ class _AuthScreenState extends State<AuthScreen> {
                                   ),
                                 ),
                               ),
-                              const SizedBox(height: 8),
+                              const SizedBox(height: 6),
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.end,
                                 children: [
@@ -176,17 +177,13 @@ class _AuthScreenState extends State<AuthScreen> {
                                   style: Theme.of(context)
                                       .textTheme
                                       .titleLarge!
-                                      .copyWith(
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .background,
-                                      ),
+                                      .copyWith(color: Colors.white),
                                 ),
                               )
                             ],
                           ),
                         ),
-                        const SizedBox(height: 22),
+                        const SizedBox(height: 16),
                         const Text('Or continue with'),
                         const SizedBox(height: 22),
                         Row(
@@ -215,21 +212,28 @@ class _AuthScreenState extends State<AuthScreen> {
                 ],
               ),
             ),
-          ),
-          Column(
-            children: [
-              const Divider(),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text('Not a member ?'),
-                  TextButton(
-                      onPressed: () {}, child: const Text('Register new'))
-                ],
-              ),
-            ],
-          )
-        ],
+            Column(
+              children: [
+                const Divider(),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text('Not a member ?'),
+                    TextButton(
+                        onPressed: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) => const CreateAccount(),
+                            ),
+                          );
+                        },
+                        child: const Text('Register new'))
+                  ],
+                ),
+              ],
+            )
+          ],
+        ),
       ),
     );
   }

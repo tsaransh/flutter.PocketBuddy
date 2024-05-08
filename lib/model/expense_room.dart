@@ -4,12 +4,13 @@ class ExpenseRoom {
       required this.groupTitle,
       required this.createdDate,
       required this.userUid,
+      required this.roomDescription,
       required this.username});
 
   final String? groupId;
   final String? groupTitle;
   final DateTime? createdDate;
   final String? userUid;
-
+  final String? roomDescription;
   final String? username;
 }
