@@ -1,3 +1,5 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'dart:async';
 import 'dart:convert';
 // ignore: depend_on_referenced_packages
@@ -24,7 +26,7 @@ class RoomScreen extends StatefulWidget {
 }
 
 class _RoomScreenState extends State<RoomScreen> {
-  final key = GlobalKey();
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   String currentUser = '';
 
   List<RoomExpense> roomExpenseList = [];
@@ -42,8 +44,15 @@ class _RoomScreenState extends State<RoomScreen> {
     super.initState();
     getUserData();
     _fetchRoomData();
+    _fetchTodayExpense();
     timer = Timer.periodic(
         const Duration(seconds: 10), (Timer t) => _fetchDataWithTime());
+  }
+
+  @override
+  void dispose() {
+    timer.cancel();
+    super.dispose();
   }
 
   getUserData() async {
@@ -55,6 +64,7 @@ class _RoomScreenState extends State<RoomScreen> {
 
   _fetchDataWithTime() {
     _fetchRoomData();
+    _fetchTodayExpense();
   }
 
   _fetchRoomData() async {
@@ -63,9 +73,11 @@ class _RoomScreenState extends State<RoomScreen> {
         Uri.parse('$groupDataUrl/statement?groupId=${widget.room.groupId}');
     final sumUrl =
         Uri.parse('$groupDataUrl/total?groupId=${widget.room.groupId}');
+
     try {
       final responseDataUrl = await http.get(dataUrl);
       final responseSumUrl = await http.get(sumUrl);
+      _fetchTodayExpense();
       if (responseDataUrl.statusCode == 200 &&
           responseSumUrl.statusCode == 200) {
         final responseData = json.decode(responseDataUrl.body);
@@ -82,13 +94,13 @@ class _RoomScreenState extends State<RoomScreen> {
             groupId: map['groupId'],
             userName: map['userName'],
           );
+
           roomExpenseList.add(room);
         }
 
         final responseSumData = json.decode(responseSumUrl.body);
-        setState(() {
-          totalAmount = responseSumData;
-        });
+
+        totalAmount = responseSumData;
       }
     } catch (error) {
       showError("failed to fetch data");
@@ -97,15 +109,45 @@ class _RoomScreenState extends State<RoomScreen> {
     }
   }
 
+  void _fetchTodayExpense() async {
+    final url = Uri.parse('$groupDataUrl/getTotalByDates');
+    try {
+      final response = await http.post(url,
+          headers: <String, String>{"Content-Type": "application/json"},
+          body: json.encode({
+            "id": widget.room.groupId,
+            "startDate":
+                "${DateTime.now().toIso8601String().substring(0, 10)}T00:00:00",
+            "endDate": DateTime.now().toIso8601String(),
+          }));
+
+      if (response.statusCode == 200) {
+        todayAmount = json.decode(response.body);
+      }
+    } catch (error) {
+      showError('failded to get today expense amount');
+    }
+  }
+
   addExpense() async {
     final url = Uri.parse('$groupDataUrl/add');
 
     try {
       Map<String, dynamic> expenseDetails = getExpenseDetails();
+      String item = expenseDetails['item'];
+      double amount = expenseDetails['amount'];
+      if (item.isEmpty) {
+        showError('Please add your expense reason.');
+        return;
+      }
+      if (amount <= 0.00) {
+        showError('Amount can\'t be less than or equal to 0');
+        return;
+      }
       final name = await getName();
       final RoomExpense room = RoomExpense(
-          expenseTitle: expenseDetails['item'],
-          expenseAmount: expenseDetails['amount'],
+          expenseTitle: item,
+          expenseAmount: amount,
           userUid: currentUser,
           groupId: widget.room.groupId!,
           userName: name.toString());
@@ -130,6 +172,7 @@ class _RoomScreenState extends State<RoomScreen> {
       showError('failed to add expense');
     } finally {
       detailController.clear();
+      FocusScope.of(context).unfocus();
     }
   }
 
@@ -165,9 +208,98 @@ class _RoomScreenState extends State<RoomScreen> {
     }
   }
 
+  deleteExpense(String expenseId) async {
+    final url = Uri.parse('$groupDataUrl/delete?expenseId=$expenseId');
+    try {
+      final response = await http.delete(url);
+      if (response.statusCode == 200) {
+        _fetchTodayExpense();
+        _fetchRoomData();
+      }
+    } catch (e) {
+      showError('failed to delete expense');
+    } finally {
+      Navigator.of(context).pop();
+    }
+  }
+
+  _showUpdateExpense(RoomExpense expense) {
+    final titleController = TextEditingController(text: expense.expenseTitle);
+    final amountController =
+        TextEditingController(text: expense.expenseAmount.toString());
+    showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.all(16),
+          width: double.infinity,
+          height: double.infinity,
+          decoration: const BoxDecoration(),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              TextField(
+                controller: titleController,
+                decoration: const InputDecoration(
+                  prefixIcon: Icon(Icons.title_outlined),
+                ),
+              ),
+              const SizedBox(height: 22),
+              TextField(
+                controller: amountController,
+                decoration: const InputDecoration(
+                  prefixIcon: Icon(Icons.currency_rupee),
+                ),
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.all(8),
+                  ),
+                  onPressed: () {
+                    _updateExpense(
+                        expense, titleController.text, amountController.text);
+                    Navigator.of(context).pop();
+                  },
+                  child: const Text('Update'))
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  _updateExpense(RoomExpense room, String title, String amount) async {
+    final url = Uri.parse('$groupDataUrl/update');
+    try {
+      final response = await http.post(
+        url,
+        headers: <String, String>{"Content-Type": "application/json"},
+        body: json.encode(
+          {
+            "expenseId": room.expenseId,
+            "expenseTitle": title,
+            "expenseAmount": double.parse(amount),
+            "groupId": room.groupId,
+            "userUid": room.userUid,
+            "userName": room.userName,
+          },
+        ),
+      );
+      if (response.statusCode == 201) {
+        _fetchRoomData();
+        _fetchTodayExpense();
+      }
+    } catch (error) {
+      Navigator.of(context).pop();
+      showError('failed to update expense');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      key: _scaffoldKey,
       appBar: AppBar(
         title: GestureDetector(
           onTap: () {
@@ -207,7 +339,7 @@ class _RoomScreenState extends State<RoomScreen> {
                 child: const Text('Copy group id'),
               ),
               PopupMenuItem(
-                onTap: () {},
+                onTap: leaveRoom,
                 child: const Text('Leave'),
               ),
             ],
@@ -216,11 +348,15 @@ class _RoomScreenState extends State<RoomScreen> {
       ),
       body: Container(
         padding: const EdgeInsets.all(8),
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              Color(0xFFB597F6),
-              Color(0xFF96C6EA),
+              Theme.of(context).brightness == Brightness.light
+                  ? const Color(0xFFB597F6)
+                  : const Color.fromARGB(255, 1, 44, 65),
+              Theme.of(context).brightness == Brightness.light
+                  ? const Color(0xFF96C6EA)
+                  : const Color.fromARGB(255, 31, 4, 0),
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -305,99 +441,115 @@ class _RoomScreenState extends State<RoomScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: roomExpenseList.map((expense) {
-                        return Align(
-                          alignment: expense.userUid == currentUser
-                              ? Alignment.centerRight
-                              : Alignment.centerLeft,
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 4),
-                            child: GestureDetector(
-                              onLongPressStart:
-                                  (LongPressStartDetails details) {
-                                _showExpenseMenu(expense, details);
-                              },
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: expense.userUid == currentUser
-                                      ? const Color.fromARGB(255, 103, 224, 107)
-                                          .withOpacity(0.7)
-                                      : Theme.of(context)
-                                          .colorScheme
-                                          .background,
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                padding: const EdgeInsets.all(12),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      expense.userUid == currentUser
-                                          ? 'You'
-                                          : expense.userName,
-                                      style: TextStyle(
+                        return expense.expenseAmount == 0.00
+                            ? (expense.expenseTitle.compareTo('L') == 0)
+                                ? _showLeaveInfo(
+                                    expense.userName,
+                                    DateFormat('MM/dd/yy \'at\' h:mm a')
+                                        .format(expense.dateOfExpense!))
+                                : _showJoinWelcome(
+                                    expense.userName,
+                                    DateFormat('MM/dd/yy \'at\' h:mm a')
+                                        .format(expense.dateOfExpense!))
+                            : Align(
+                                alignment: expense.userUid == currentUser
+                                    ? Alignment.centerRight
+                                    : Alignment.centerLeft,
+                                child: Padding(
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 4),
+                                  child: GestureDetector(
+                                    onLongPressStart:
+                                        (LongPressStartDetails details) {
+                                      _showExpenseMenu(expense, details);
+                                    },
+                                    child: Container(
+                                      decoration: BoxDecoration(
                                         color: expense.userUid == currentUser
-                                            ? Theme.of(context)
-                                                .colorScheme
-                                                .primary
+                                            ? const Color.fromARGB(
+                                                    255, 103, 224, 107)
+                                                .withOpacity(0.7)
                                             : Theme.of(context)
                                                 .colorScheme
-                                                .onBackground,
+                                                .background,
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      padding: const EdgeInsets.all(12),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            expense.userUid == currentUser
+                                                ? 'You'
+                                                : expense.userName,
+                                            style: TextStyle(
+                                              color:
+                                                  expense.userUid == currentUser
+                                                      ? Theme.of(context)
+                                                          .colorScheme
+                                                          .primary
+                                                      : Theme.of(context)
+                                                          .colorScheme
+                                                          .onBackground,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 6),
+                                          Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Text(
+                                                expense.expenseTitle,
+                                                style: TextStyle(
+                                                  color: expense.userUid ==
+                                                          currentUser
+                                                      ? Colors.white
+                                                      : Theme.of(context)
+                                                          .colorScheme
+                                                          .onBackground,
+                                                ),
+                                              ),
+                                              const SizedBox(width: 16),
+                                              Text(
+                                                '₹ ${expense.expenseAmount}',
+                                                style: TextStyle(
+                                                  color: expense.userUid ==
+                                                          currentUser
+                                                      ? Colors.white
+                                                      : Theme.of(context)
+                                                          .colorScheme
+                                                          .onBackground,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 12),
+                                          Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Text(
+                                                DateFormat(
+                                                        'MM/dd/yy \'at\' h:mm a')
+                                                    .format(
+                                                        expense.dateOfExpense!),
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                  color: expense.userUid ==
+                                                          currentUser
+                                                      ? Colors.white
+                                                      : Theme.of(context)
+                                                          .colorScheme
+                                                          .onBackground,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
                                       ),
                                     ),
-                                    const SizedBox(height: 6),
-                                    Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Text(
-                                          expense.expenseTitle,
-                                          style: TextStyle(
-                                            color:
-                                                expense.userUid == currentUser
-                                                    ? Colors.white
-                                                    : Theme.of(context)
-                                                        .colorScheme
-                                                        .onBackground,
-                                          ),
-                                        ),
-                                        const SizedBox(width: 16),
-                                        Text(
-                                          '₹ ${expense.expenseAmount}',
-                                          style: TextStyle(
-                                            color:
-                                                expense.userUid == currentUser
-                                                    ? Colors.white
-                                                    : Theme.of(context)
-                                                        .colorScheme
-                                                        .onBackground,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 12),
-                                    Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Text(
-                                          DateFormat('MM/dd/yy \'at\' h:mm a')
-                                              .format(expense.dateOfExpense!),
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color:
-                                                expense.userUid == currentUser
-                                                    ? Colors.white
-                                                    : Theme.of(context)
-                                                        .colorScheme
-                                                        .onBackground,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
+                                  ),
                                 ),
-                              ),
-                            ),
-                          ),
-                        );
+                              );
                       }).toList(),
                     ),
                   ),
@@ -409,17 +561,16 @@ class _RoomScreenState extends State<RoomScreen> {
               child: Row(
                 children: [
                   Expanded(
-                    child: TextField(
+                    child: TextFormField(
                       controller: detailController,
                       decoration: InputDecoration(
                         prefixIcon: const Icon(
                           IconData(0xf04e1, fontFamily: 'MaterialIcons'),
                         ),
-                        label: Text(
-                          '₹ 250 for Riksha',
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.onBackground,
-                          ),
+                        labelText: 'Expense',
+                        hintText: 'e.g., ₹ 250 for Riksha',
+                        labelStyle: TextStyle(
+                          color: Theme.of(context).colorScheme.onBackground,
                         ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(25),
@@ -428,7 +579,13 @@ class _RoomScreenState extends State<RoomScreen> {
                     ),
                   ),
                   IconButton(
-                    onPressed: addExpense,
+                    onPressed: () {
+                      if (detailController.text.isEmpty) {
+                        showError('Please enter expense details to add');
+                      } else {
+                        addExpense();
+                      }
+                    },
                     icon: const Icon(Icons.send),
                   ),
                 ],
@@ -445,56 +602,159 @@ class _RoomScreenState extends State<RoomScreen> {
       SnackBar(
         content: Text(error),
         action: SnackBarAction(
-            label: 'Okay',
-            textColor: Colors.white,
-            onPressed: () {
-              ScaffoldMessenger.of(context).clearSnackBars();
-            }),
+          label: 'Okay',
+          textColor: Colors.white,
+          onPressed: () {
+            ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          },
+        ),
       ),
     );
   }
 
   void _showExpenseMenu(RoomExpense expense, LongPressStartDetails details) {
-    print('Button Clicked');
-    final RenderBox overlay =
-        Overlay.of(context)!.context.findRenderObject() as RenderBox;
-    showMenu(
-      color: Theme.of(context).colorScheme.onBackground,
-      context: context,
-      position: RelativeRect.fromLTRB(
-        details.globalPosition.dx,
-        details.globalPosition.dy,
-        overlay.size.width - details.globalPosition.dx,
-        overlay.size.height - details.globalPosition.dy,
-      ),
-      items: [
-        PopupMenuItem(
-          child: ListTile(
-            onTap: () {
-              // Handle update expense
-            },
-            title: Text(
-              'Update Expense',
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.background,
+    if (expense.userUid.compareTo(currentUser) == 0) {
+      final RenderBox overlay =
+          Overlay.of(context).context.findRenderObject() as RenderBox;
+      showMenu(
+        color: Theme.of(context).colorScheme.onBackground,
+        context: context,
+        position: RelativeRect.fromLTRB(
+          details.globalPosition.dx,
+          details.globalPosition.dy,
+          overlay.size.width - details.globalPosition.dx,
+          overlay.size.height - details.globalPosition.dy,
+        ),
+        items: [
+          PopupMenuItem(
+            child: ListTile(
+              onTap: () {
+                Navigator.of(context).pop();
+                _showUpdateExpense(expense);
+              },
+              title: Text(
+                'Update Expense',
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.background,
+                ),
               ),
             ),
           ),
-        ),
-        PopupMenuItem(
-          child: ListTile(
-            onTap: () {
-              // Handle delete expense
-            },
-            title: Text(
-              'Delete Expense',
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.background,
+          PopupMenuItem(
+            child: ListTile(
+              onTap: () {
+                deleteExpense(expense.expenseId);
+              },
+              title: Text(
+                'Delete Expense',
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.background,
+                ),
               ),
             ),
           ),
+        ],
+      );
+    }
+  }
+
+  leaveRoom() async {
+    addLeaveMessage(widget.room.groupId!);
+    final url = Uri.parse(
+        '$groupUrl/leave?groupId=${widget.room.groupId}&userUid=$currentUser');
+    final response = await http.delete(url);
+    if (response.statusCode == 200) {
+      Navigator.of(context).pop();
+    }
+  }
+
+  addLeaveMessage(String roomId) async {
+    final url = Uri.parse('${ApiUrl.groupExpenseData}/add');
+    try {
+      final name = await getName();
+      final RoomExpense room = RoomExpense(
+          expenseTitle: 'L',
+          expenseAmount: 0.00,
+          userUid: currentUser,
+          groupId: roomId,
+          userName: name.toString());
+      final response = await http.post(
+        url,
+        headers: <String, String>{"Content-Type": "application/json"},
+        body: json.encode(
+          {
+            "expenseId": room.expenseId,
+            "expenseTitle": room.expenseTitle,
+            "expenseAmount": room.expenseAmount,
+            "groupId": room.groupId,
+            "userUid": room.userUid,
+            "userName": room.userName,
+          },
         ),
-      ],
+      );
+      if (response.statusCode == 200) {
+        // do something
+      }
+    } catch (error) {
+      showError('oops something went wrong.');
+    }
+  }
+
+  Widget _showJoinWelcome(String userName, String date) {
+    return Center(
+      child: Container(
+          margin: const EdgeInsets.only(top: 12, bottom: 12),
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Colors.grey.withOpacity(0.2),
+            borderRadius: const BorderRadius.all(Radius.circular(25)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                '$userName joined the Room',
+                style: const TextStyle(
+                  color: Colors.black,
+                ),
+              ),
+              Text(
+                date,
+                style: const TextStyle(
+                  fontSize: 10,
+                ),
+              )
+            ],
+          )),
+    );
+  }
+
+  Widget _showLeaveInfo(String userName, String date) {
+    return Center(
+      child: Container(
+          margin: const EdgeInsets.only(top: 12, bottom: 12),
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Colors.grey.withOpacity(0.2),
+            borderRadius: const BorderRadius.all(Radius.circular(25)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                '$userName left the Room',
+                style: const TextStyle(
+                  color: Colors.black,
+                ),
+              ),
+              Text(
+                date,
+                style: const TextStyle(
+                  fontSize: 10,
+                ),
+              )
+            ],
+          )),
     );
   }
 }

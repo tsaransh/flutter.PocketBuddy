@@ -9,6 +9,7 @@ import 'package:pocket_buddy_new/model/personal_expense.dart';
 import 'package:pocket_buddy_new/model/rest_api_url.dart';
 import 'package:http/http.dart' as http;
 import 'package:pocket_buddy_new/screens/expense_details.dart';
+import 'package:pocket_buddy_new/screens/profile.dart';
 import 'package:pocket_buddy_new/screens/statements.dart';
 
 class PersonalExpenseScreen extends StatefulWidget {
@@ -79,6 +80,10 @@ class _PersonalExpenseScreenState extends State<PersonalExpenseScreen> {
           }));
 
       final allTimeTotalResponse = await http.get(allTimeTotal);
+
+      if (lastDaysStatementResponse.statusCode == 400) {
+        return;
+      }
 
       if (allTimeTotalResponse.statusCode == 200 &&
           lastDaysSumResponse.statusCode == 200 &&
@@ -211,14 +216,47 @@ class _PersonalExpenseScreenState extends State<PersonalExpenseScreen> {
             ),
             itemBuilder: (context) => [
               PopupMenuItem(
-                onTap: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => const FetchStatement(),
+                  onTap: () {
+                    Navigator.of(context).push(MaterialPageRoute(
+                      builder: (context) => const ProfileScreen(),
+                    ));
+                  },
+                  child: Row(children: [
+                    Icon(
+                      Icons.person_pin,
+                      color: Theme.of(context).colorScheme.onBackground,
                     ),
-                  );
+                    const SizedBox(width: 4),
+                    const Text('Profile')
+                  ])),
+              PopupMenuItem(
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => const FetchStatement(),
+                      ),
+                    );
+                  },
+                  child: Row(children: [
+                    Icon(
+                      Icons.library_books,
+                      color: Theme.of(context).colorScheme.onBackground,
+                    ),
+                    const SizedBox(width: 4),
+                    const Text('Statements')
+                  ])),
+              PopupMenuItem(
+                onTap: () {
+                  FirebaseAuth.instance.signOut();
                 },
-                child: const Text('Statements'),
+                child: Row(children: [
+                  Icon(
+                    Icons.logout,
+                    color: Theme.of(context).colorScheme.onBackground,
+                  ),
+                  const SizedBox(width: 4),
+                  const Text('Logout')
+                ]),
               ),
             ],
           ),

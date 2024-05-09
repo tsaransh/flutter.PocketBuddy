@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
-import 'package:pocket_buddy_new/screens/settings.dart';
 import 'package:pocket_buddy_new/widgets/join_group_details.dart';
 import 'package:pocket_buddy_new/widgets/personal_expense_widget.dart';
 
@@ -43,10 +42,6 @@ class _PersonalHomeScreenState extends State<HomeScreen> {
                 text: 'Room',
               ),
               GButton(
-                icon: Icons.settings,
-                text: 'Setting',
-              ),
-              GButton(
                 icon: Icons.create,
                 text: 'About',
               ),
@@ -64,8 +59,6 @@ class _PersonalHomeScreenState extends State<HomeScreen> {
     } else if ((_selectedNavIndex + 1) == 2) {
       return const JoinGroupScreen();
     } else if ((_selectedNavIndex + 1) == 3) {
-      return const SettingScreen();
-    } else if ((_selectedNavIndex + 1) == 4) {
       // return _buildAbout();
     } else {
       return;

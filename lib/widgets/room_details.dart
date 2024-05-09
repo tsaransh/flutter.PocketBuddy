@@ -1,5 +1,8 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'dart:convert';
 import 'package:firebase_auth/firebase_auth.dart';
+// ignore: depend_on_referenced_packages
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -23,8 +26,8 @@ class _RoomDetailsState extends State<RoomDetailsWidget> {
   List<String> memberUid = [];
   bool _isFetchingData = true;
   String currentUser = FirebaseAuth.instance.currentUser!.uid;
-  final _url = ApiUrl.groupExpenseData;
-  final _urlMembers = ApiUrl.groupExpense;
+  final _urlGroupData = ApiUrl.groupExpenseData;
+  final _urlGroup = ApiUrl.groupExpense;
 
   @override
   void initState() {
@@ -36,7 +39,7 @@ class _RoomDetailsState extends State<RoomDetailsWidget> {
   _fetchMemberUid() async {
     try {
       final url =
-          Uri.parse('$_urlMembers/getMembers?groupId=${widget.room.groupId}');
+          Uri.parse('$_urlGroup/getMembers?groupId=${widget.room.groupId}');
       final response = await http.get(url);
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
@@ -51,8 +54,8 @@ class _RoomDetailsState extends State<RoomDetailsWidget> {
 
   _fetchMembers() async {
     membersData = [];
-    final url =
-        Uri.parse('$_url/getMembersData?groupId=${widget.room.groupId}');
+    final url = Uri.parse(
+        '$_urlGroupData/getMembersData?groupId=${widget.room.groupId}');
 
     try {
       final response = await http.get(url);
@@ -129,11 +132,15 @@ class _RoomDetailsState extends State<RoomDetailsWidget> {
               ),
             )
           : Container(
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    Color.fromARGB(255, 165, 136, 223),
-                    Color.fromARGB(255, 189, 163, 162)
+                    Theme.of(context).brightness == Brightness.light
+                        ? const Color.fromARGB(255, 165, 136, 223)
+                        : const Color.fromARGB(255, 30, 14, 61),
+                    Theme.of(context).brightness == Brightness.light
+                        ? const Color.fromARGB(255, 189, 163, 162)
+                        : const Color.fromARGB(255, 36, 3, 1),
                   ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
@@ -260,7 +267,7 @@ class _RoomDetailsState extends State<RoomDetailsWidget> {
                                           ),
                                     ),
                                     Text(
-                                      '₹ ${membersData[index].amount}',
+                                      '₹ ${membersData[index].amount > 0.00 ? membersData[index].amount : 0.00}',
                                       style: Theme.of(context)
                                           .textTheme
                                           .bodyLarge!
@@ -292,7 +299,7 @@ class _RoomDetailsState extends State<RoomDetailsWidget> {
                             ),
                           ),
                         ),
-                        onPressed: () {},
+                        onPressed: deleteRoom,
                         icon: const Icon(Icons.delete),
                         label: const Text('Delete Room'),
                       ),
@@ -302,5 +309,30 @@ class _RoomDetailsState extends State<RoomDetailsWidget> {
               ),
             ),
     );
+  }
+
+  void deleteRoom() async {
+    final url = Uri.parse(
+        '$_urlGroup/delete?groupId=${widget.room.groupId}&userUid=$currentUser');
+
+    try {
+      final response = await http.delete(url);
+
+      if (response.statusCode == 200) {
+        showDialog(
+            barrierDismissible: false,
+            context: context,
+            builder: (context) {
+              return AlertDialog(
+                title: const Text('Room will be deleted soon, please wait'),
+                actions: [
+                  TextButton(onPressed: () {}, child: const Text('Okay')),
+                ],
+              );
+            });
+      }
+    } catch (error) {
+      showError('Faild to delete room');
+    }
   }
 }

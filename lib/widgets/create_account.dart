@@ -50,7 +50,7 @@ class _CreateAccountState extends State<CreateAccount> {
         });
         Navigator.of(context).pop();
       } catch (error) {
-        showError('failed to create an new account');
+        showError('Failed to create a new account');
       } finally {
         _formKey.currentState!.reset();
 
@@ -78,230 +78,237 @@ class _CreateAccountState extends State<CreateAccount> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      resizeToAvoidBottomInset: false,
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                'Pocket Buddy',
-                style: GoogleFonts.pacifico(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 36,
-                  color: Colors.teal,
-                ),
-              ),
-              const SizedBox(height: 20.0),
-              Container(
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  borderRadius: const BorderRadius.all(
-                    Radius.circular(20),
-                  ),
-                  color: Theme.of(context).colorScheme.background,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Theme.of(context)
-                          .colorScheme
-                          .onBackground
-                          .withOpacity(0.2), // Black with 20% opacity
-                      blurRadius: 9,
-                      spreadRadius: 1.5,
-                      offset: const Offset(0, 0),
+      body: Column(
+        children: [
+          Expanded(
+            child: Center(
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const SizedBox(height: 56),
+                    Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Container(
+                        padding: const EdgeInsets.all(24),
+                        decoration: BoxDecoration(
+                          borderRadius: const BorderRadius.all(
+                            Radius.circular(20),
+                          ),
+                          color: Theme.of(context).colorScheme.background,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onBackground
+                                  .withOpacity(0.2),
+                              blurRadius: 9,
+                              spreadRadius: 1.5,
+                              offset: const Offset(0, 0),
+                            ),
+                          ],
+                        ),
+                        child: Form(
+                          key: _formKey,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Text(
+                                'Pocket Buddy',
+                                style: GoogleFonts.pacifico(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 36,
+                                  color: Colors.teal,
+                                ),
+                              ),
+                              const SizedBox(height: 26),
+                              TextFormField(
+                                decoration: const InputDecoration(
+                                  labelText: 'First name',
+                                  prefixIcon: Icon(Icons.person),
+                                  border: UnderlineInputBorder(),
+                                ),
+                                validator: (value) {
+                                  if (value.toString().isEmpty ||
+                                      value == null) {
+                                    return 'First name can\'t be empty';
+                                  }
+                                  if (value.toString().contains(
+                                      RegExp(r'[0-9!@#$%^&*(),.?":{}|<>]'))) {
+                                    return 'Name can\'t contain numbers or special characters';
+                                  }
+                                  return null;
+                                },
+                                onSaved: (value) {
+                                  _firstName = value!;
+                                },
+                              ),
+                              const SizedBox(height: 20.0),
+                              TextFormField(
+                                decoration: const InputDecoration(
+                                  labelText: 'Last name',
+                                  prefixIcon: Icon(Icons.person),
+                                  border: UnderlineInputBorder(),
+                                ),
+                                validator: (value) {
+                                  if (value.toString().contains(
+                                      RegExp(r'[0-9!@#$%^&*(),.?":{}|<>]'))) {
+                                    return 'Name can\'t contain numbers or special characters';
+                                  }
+                                  return null;
+                                },
+                                onSaved: (value) {
+                                  _lastName = value!;
+                                },
+                              ),
+                              const SizedBox(height: 20.0),
+                              TextFormField(
+                                decoration: const InputDecoration(
+                                  labelText: 'Email',
+                                  prefixIcon: Icon(Icons.email),
+                                  border: UnderlineInputBorder(),
+                                ),
+                                validator: (value) {
+                                  if (value.toString().isEmpty ||
+                                      value == null) {
+                                    return 'Email can\'t be empty';
+                                  }
+
+                                  if (!value.toString().contains('@')) {
+                                    return 'Enter a valid email';
+                                  }
+                                  return null;
+                                },
+                                onSaved: (value) {
+                                  _email = value!;
+                                },
+                              ),
+                              const SizedBox(height: 20.0),
+                              TextFormField(
+                                obscureText: _passwordVisibility,
+                                decoration: InputDecoration(
+                                    labelText: 'Password',
+                                    prefixIcon: const Icon(Icons.lock),
+                                    border: const UnderlineInputBorder(),
+                                    suffixIcon: !_passwordVisibility
+                                        ? IconButton(
+                                            onPressed: () {
+                                              setState(() {
+                                                _passwordVisibility =
+                                                    !_passwordVisibility;
+                                              });
+                                            },
+                                            icon: const Icon(
+                                                Icons.remove_red_eye))
+                                        : IconButton(
+                                            onPressed: () {
+                                              setState(() {
+                                                _passwordVisibility =
+                                                    !_passwordVisibility;
+                                              });
+                                            },
+                                            icon: const Icon(
+                                                Icons.visibility_off))),
+                                validator: (value) {
+                                  if (value.toString().isEmpty ||
+                                      value == null ||
+                                      value.toString().length < 6) {
+                                    return 'Password should be at least 6 characters long';
+                                  }
+
+                                  if (!value.toString().contains(
+                                      RegExp(r'[0-9!@#$%^&*(),.?":{}|<>]'))) {
+                                    return 'Use numbers (0-9) or special symbols like (@, #) to create a password';
+                                  }
+
+                                  return null;
+                                },
+                                onSaved: (value) {
+                                  _password = value!;
+                                },
+                              ),
+                              const SizedBox(height: 20.0),
+                              TextFormField(
+                                obscureText: _passwordVisibility,
+                                decoration: const InputDecoration(
+                                  labelText: 'Confirm password',
+                                  prefixIcon: Icon(Icons.lock),
+                                  border: UnderlineInputBorder(),
+                                ),
+                                validator: (value) {
+                                  if (value.toString().isEmpty ||
+                                      value == null ||
+                                      value.toString().length < 6) {
+                                    return 'Password should be at least 6 characters long';
+                                  }
+
+                                  if (!value.toString().contains(
+                                      RegExp(r'[0-9!@#$%^&*(),.?":{}|<>]'))) {
+                                    return 'Use numbers (0-9) or special symbols like (@, #) to create a password';
+                                  }
+
+                                  if (_password != _confirmPassword) {
+                                    return 'Password and confirm password do not match';
+                                  }
+
+                                  return null;
+                                },
+                                onSaved: (value) {
+                                  _confirmPassword = value!;
+                                },
+                              ),
+                              const SizedBox(height: 24),
+                              ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  padding: const EdgeInsets.all(16),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(25),
+                                  ),
+                                ),
+                                onPressed: () {
+                                  if (_formKey.currentState!.validate()) {
+                                    setState(() {
+                                      _creatingAccount = true;
+                                    });
+                                    _createAccount();
+                                  }
+                                },
+                                child: !_creatingAccount
+                                    ? const Text('Create Account')
+                                    : CircularProgressIndicator(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onBackground,
+                                      ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                     ),
                   ],
                 ),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      TextFormField(
-                        decoration: const InputDecoration(
-                          labelText: 'first name',
-                          prefixIcon: Icon(Icons.person),
-                          border: UnderlineInputBorder(),
-                        ),
-                        validator: (value) {
-                          if (value.toString().isEmpty || value == null) {
-                            return 'First name can\'t be empty';
-                          }
-                          if (value
-                              .toString()
-                              .contains(RegExp(r'[0-9!@#$%^&*(),.?":{}|<>]'))) {
-                            return 'Name can\'t contain numbers or special characters';
-                          }
-                          return null;
-                        },
-                        onSaved: (value) {
-                          _firstName = value!;
-                        },
-                      ),
-                      const SizedBox(height: 20.0),
-                      TextFormField(
-                        decoration: const InputDecoration(
-                          labelText: 'last name',
-                          prefixIcon: Icon(Icons.person),
-                          border: UnderlineInputBorder(),
-                        ),
-                        validator: (value) {
-                          if (value
-                              .toString()
-                              .contains(RegExp(r'[0-9!@#$%^&*(),.?":{}|<>]'))) {
-                            return 'Name can\'t contain numbers or special characters';
-                          }
-                          return null;
-                        },
-                        onSaved: (value) {
-                          _lastName = value!;
-                        },
-                      ),
-                      const SizedBox(height: 20.0),
-                      TextFormField(
-                        decoration: const InputDecoration(
-                          labelText: 'email',
-                          prefixIcon: Icon(Icons.email),
-                          border: UnderlineInputBorder(),
-                        ),
-                        validator: (value) {
-                          if (value.toString().isEmpty || value == null) {
-                            return 'first name can\' be empty';
-                          }
-
-                          if (!value.toString().contains('@')) {
-                            return 'eniter a valid email';
-                          }
-                          return null;
-                        },
-                        onSaved: (value) {
-                          _email = value!;
-                        },
-                      ),
-                      const SizedBox(height: 20.0),
-                      TextFormField(
-                        obscureText: _passwordVisibility,
-                        decoration: InputDecoration(
-                            labelText: 'password',
-                            prefixIcon: const Icon(Icons.lock),
-                            border: const UnderlineInputBorder(),
-                            suffixIcon: !_passwordVisibility
-                                ? IconButton(
-                                    onPressed: () {
-                                      setState(() {
-                                        _passwordVisibility =
-                                            !_passwordVisibility;
-                                      });
-                                    },
-                                    icon: const Icon(Icons.remove_red_eye))
-                                : IconButton(
-                                    onPressed: () {
-                                      setState(() {
-                                        _passwordVisibility =
-                                            !_passwordVisibility;
-                                      });
-                                    },
-                                    icon: const Icon(Icons.visibility_off))),
-                        validator: (value) {
-                          if (value.toString().isEmpty ||
-                              value == null && value.toString().length > 6) {
-                            return 'password should be greater then 6 characters.';
-                          }
-
-                          if (!value
-                              .toString()
-                              .contains(RegExp(r'[0-9!@#$%^&*(),.?":{}|<>]'))) {
-                            return 'use number like (1,2,3) or special symbols like (@, #) to create password';
-                          }
-
-                          return null;
-                        },
-                        onSaved: (value) {
-                          _password = value!;
-                        },
-                      ),
-                      const SizedBox(height: 20.0),
-                      TextFormField(
-                        obscureText: _passwordVisibility,
-                        decoration: const InputDecoration(
-                          labelText: 'password',
-                          prefixIcon: Icon(Icons.lock),
-                          border: UnderlineInputBorder(),
-                        ),
-                        validator: (value) {
-                          if (value.toString().isEmpty ||
-                              value == null && value.toString().length > 6) {
-                            return 'password should be greater then 6 characters.';
-                          }
-
-                          if (!value
-                              .toString()
-                              .contains(RegExp(r'[0-9!@#$%^&*(),.?":{}|<>]'))) {
-                            return 'use number like (1,2,3) or special symbols like (@, #) to create password';
-                          }
-
-                          if (_password
-                                  .toString()
-                                  .compareTo(_confirmPassword.toString()) !=
-                              0) {
-                            return 'password and confirm password not match';
-                          }
-
-                          return null;
-                        },
-                        onSaved: (value) {
-                          _confirmPassword = value!;
-                        },
-                      ),
-                      const SizedBox(height: 20.0),
-                      ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.all(16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(25),
-                          ),
-                        ),
-                        onPressed: () {
-                          if (_formKey.currentState!.validate()) {
-                            setState(() {
-                              _creatingAccount = true;
-                            });
-                            _createAccount();
-                          }
-                        },
-                        child: !_creatingAccount
-                            ? const Text('Create Account')
-                            : CircularProgressIndicator(
-                                color:
-                                    Theme.of(context).colorScheme.onBackground,
-                              ),
-                      ),
-                    ],
-                  ),
-                ),
               ),
-              Column(
-                children: [
-                  const Divider(thickness: 2),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Text('Already have an account?'),
-                      TextButton(
-                        onPressed: () {
-                          // Navigate to login page
-                          Navigator.of(context).pop();
-                        },
-                        child: const Text('Login'),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ],
+            ),
           ),
-        ),
+          const Divider(thickness: 2),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Text('Already have an account?'),
+                TextButton(
+                  onPressed: () {
+                    // Navigate to login page
+                    Navigator.of(context).pop();
+                  },
+                  child: const Text('Login'),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

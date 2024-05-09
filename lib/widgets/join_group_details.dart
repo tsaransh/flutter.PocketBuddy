@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:pocket_buddy_new/model/expense_room.dart';
 import 'package:pocket_buddy_new/model/rest_api_url.dart';
+import 'package:pocket_buddy_new/model/room_expense.dart';
 import 'package:pocket_buddy_new/model/user_join_group_details.dart';
 
 import 'package:http/http.dart' as http;
@@ -21,17 +22,6 @@ class JoinGroupScreen extends StatefulWidget {
 }
 
 class _JoinGroupScreenState extends State<JoinGroupScreen> {
-  // animation contorller
-  // late final AnimationController _controller = AnimationController(
-  //   vsync: this,
-  //   duration: const Duration(seconds: 2),
-  // )..repeat(reverse: true);
-
-  // late final Animation<Offset> _offsetAnimation =
-  //     Tween<Offset>(begin: Offset.zero, end: const Offset(1.5, 0.0)).animate(
-  //   CurvedAnimation(parent: _controller, curve: Curves.linear),
-  // );
-
   final _url = ApiUrl.groupExpense;
   String? _currentUser;
 
@@ -39,6 +29,7 @@ class _JoinGroupScreenState extends State<JoinGroupScreen> {
   bool _isLoading = false;
 
   List<UserJoinGroupDetails>? _userJoinGroupList;
+  String currentUser = FirebaseAuth.instance.currentUser!.uid;
 
   final _serchController = TextEditingController();
   final _titleController = TextEditingController();
@@ -99,46 +90,62 @@ class _JoinGroupScreenState extends State<JoinGroupScreen> {
               ? const Center(
                   child: Text('Your haven\'t join any gorup!'),
                 )
-              : ListView.builder(
-                  itemCount: _userJoinGroupList!.length,
-                  itemBuilder: (context, index) {
-                    return Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: InkWell(
-                        onTap: () {
-                          _openRoomScreen(_userJoinGroupList![index]);
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 24),
-                          decoration: BoxDecoration(
-                            color: index % 2 == 0
-                                ? const Color.fromARGB(177, 151, 135, 134)
-                                : const Color.fromARGB(43, 99, 70, 67),
-                            borderRadius: const BorderRadius.all(
-                              Radius.circular(25),
+              : Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        Theme.of(context).brightness == Brightness.light
+                            ? const Color.fromARGB(255, 235, 215, 126)
+                            : const Color.fromARGB(255, 4, 110, 105),
+                        Theme.of(context).brightness == Brightness.light
+                            ? const Color.fromARGB(255, 175, 62, 58)
+                            : const Color.fromARGB(255, 70, 0, 41),
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                  ),
+                  child: ListView.builder(
+                    itemCount: _userJoinGroupList!.length,
+                    itemBuilder: (context, index) {
+                      return Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: InkWell(
+                          onTap: () {
+                            _openRoomScreen(_userJoinGroupList![index]);
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 24),
+                            decoration: BoxDecoration(
+                              color: index % 2 == 0
+                                  ? const Color.fromARGB(177, 151, 135, 134)
+                                  : const Color.fromARGB(43, 99, 70, 67),
+                              borderRadius: const BorderRadius.all(
+                                Radius.circular(25),
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  _userJoinGroupList![index].groupTitle,
+                                  style: GoogleFonts.abhayaLibre(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onBackground,
+                                    fontWeight: FontWeight.w500,
+                                    fontSize: 20,
+                                  ),
+                                ),
+                                const Icon(Icons.arrow_forward_rounded),
+                              ],
                             ),
                           ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                _userJoinGroupList![index].groupTitle,
-                                style: GoogleFonts.abhayaLibre(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .onBackground,
-                                  fontWeight: FontWeight.w500,
-                                  fontSize: 20,
-                                ),
-                              ),
-                              const Icon(Icons.arrow_forward_rounded),
-                            ],
-                          ),
                         ),
-                      ),
-                    );
-                  },
+                      );
+                    },
+                  ),
                 ),
     );
   }
@@ -146,13 +153,15 @@ class _JoinGroupScreenState extends State<JoinGroupScreen> {
   _openRoomScreen(UserJoinGroupDetails roomDetails) async {
     ExpenseRoom response = await _getRoomDetails(roomDetails.groupId);
     if (response.groupId!.isNotEmpty) {
-      Navigator.of(context).push(
+      await Navigator.of(context).push(
         MaterialPageRoute(
           builder: (context) => RoomScreen(
             room: response,
           ),
         ),
       );
+
+      _fetchJoinGroupData();
     }
   }
 
@@ -235,6 +244,7 @@ class _JoinGroupScreenState extends State<JoinGroupScreen> {
           final joinResponse = await http.get(url);
           if (joinResponse.statusCode == 200) {
             _fetchJoinGroupData();
+            addWelcomeExpense(groupId);
           }
         } else {
           _showError('No room found');
@@ -244,6 +254,38 @@ class _JoinGroupScreenState extends State<JoinGroupScreen> {
       } finally {
         Navigator.of(context).pop();
       }
+    }
+  }
+
+  addWelcomeExpense(String roomId) async {
+    final url = Uri.parse('${ApiUrl.groupExpenseData}/add');
+    try {
+      final name = await getName();
+      final RoomExpense room = RoomExpense(
+          expenseTitle: "",
+          expenseAmount: 0.00,
+          userUid: currentUser,
+          groupId: roomId,
+          userName: name.toString());
+      final response = await http.post(
+        url,
+        headers: <String, String>{"Content-Type": "application/json"},
+        body: json.encode(
+          {
+            "expenseId": room.expenseId,
+            "expenseTitle": room.expenseTitle,
+            "expenseAmount": room.expenseAmount,
+            "groupId": room.groupId,
+            "userUid": room.userUid,
+            "userName": room.userName,
+          },
+        ),
+      );
+      if (response.statusCode == 200) {
+        // do something
+      }
+    } catch (error) {
+      _showError('oops something went wrong.');
     }
   }
 
@@ -316,7 +358,7 @@ class _JoinGroupScreenState extends State<JoinGroupScreen> {
         if (name == null || name.isEmpty) {
           final data = await FirebaseFirestore.instance
               .collection('users')
-              .doc(FirebaseAuth.instance.currentUser!.uid)
+              .doc(currentUser)
               .get();
 
           name = data['firstname'] + " " + data['lastname'];
@@ -343,7 +385,6 @@ class _JoinGroupScreenState extends State<JoinGroupScreen> {
 
     try {
       String name = await getName();
-      print(name);
       final response = await http.post(
         createUrl,
         headers: <String, String>{"Content-Type": "application/json"},
@@ -358,7 +399,6 @@ class _JoinGroupScreenState extends State<JoinGroupScreen> {
 
       if (response.statusCode == 201) {
         final responseData = json.decode(response.body);
-        print(responseData);
 
         final room = ExpenseRoom(
           groupId: responseData['groupDetails']['groupId'],
@@ -369,19 +409,19 @@ class _JoinGroupScreenState extends State<JoinGroupScreen> {
           username: responseData['groupDetails']['creatorName'],
           roomDescription: '',
         );
-
+        addWelcomeExpense(room.groupId!);
         Navigator.of(context).pop();
-        Navigator.of(context).push(
+        await Navigator.of(context).push(
           MaterialPageRoute(
             builder: (context) => RoomScreen(
               room: room,
             ),
           ),
         );
+
         _fetchJoinGroupData();
       }
     } catch (error) {
-      print("Error Creating: $error");
       _showError('failed to create room');
     } finally {
       _titleController.clear();

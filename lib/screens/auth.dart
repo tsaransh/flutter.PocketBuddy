@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -70,149 +71,164 @@ class _AuthScreenState extends State<AuthScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      resizeToAvoidBottomInset: false,
-      body: SingleChildScrollView(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const SizedBox(height: 56),
-            SingleChildScrollView(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.lock,
-                    size: 100,
-                    color: Theme.of(context).colorScheme.onBackground,
-                  ),
-                  const SizedBox(height: 42),
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    width: double.infinity,
-                    child: Column(
+      // resizeToAvoidBottomInset: false,
+      body: Column(
+        children: [
+          Expanded(
+            child: Center(
+              child: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Text('Welcome back you\'ve been missed'),
-                        const SizedBox(height: 15),
-                        Form(
-                          key: _formKey,
+                        Icon(
+                          Icons.lock,
+                          size: 100,
+                          color: Theme.of(context).colorScheme.onBackground,
+                        ),
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          width: double.infinity,
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              TextFormField(
-                                validator: (value) {
-                                  if (value!.isEmpty || !value.contains('@')) {
-                                    return 'please enter a valid email id';
-                                  }
-                                  return null;
-                                },
-                                onSaved: (value) {
-                                  _email = value!;
-                                },
-                                decoration: const InputDecoration(
-                                  labelText: 'email',
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.all(
-                                      Radius.circular(10),
+                              const Text('Welcome back you\'ve been missed'),
+                              const SizedBox(height: 15),
+                              Form(
+                                key: _formKey,
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
+                                  children: [
+                                    TextFormField(
+                                      validator: (value) {
+                                        if (value!.isEmpty ||
+                                            !value.contains('@')) {
+                                          return 'please enter a valid email id';
+                                        }
+                                        return null;
+                                      },
+                                      onSaved: (value) {
+                                        _email = value!;
+                                      },
+                                      decoration: const InputDecoration(
+                                        labelText: 'email',
+                                        border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.all(
+                                            Radius.circular(10),
+                                          ),
+                                        ),
+                                        prefixIcon: Icon(Icons.email),
+                                      ),
                                     ),
-                                  ),
-                                  prefixIcon: Icon(Icons.email),
+                                    const SizedBox(height: 10),
+                                    TextFormField(
+                                      validator: (value) {
+                                        if (value!.isEmpty ||
+                                            value.length <= 6) {
+                                          return 'password must be greater than 6 characters';
+                                        }
+                                        return null;
+                                      },
+                                      onSaved: (value) {
+                                        _password = value!;
+                                      },
+                                      obscureText: isHiding,
+                                      decoration: InputDecoration(
+                                        labelText: 'password',
+                                        border: const OutlineInputBorder(
+                                          borderRadius: BorderRadius.all(
+                                            Radius.circular(10),
+                                          ),
+                                        ),
+                                        prefixIcon:
+                                            const Icon(Icons.lock_person),
+                                        suffixIcon: IconButton(
+                                          onPressed: () {
+                                            setState(() {
+                                              isHiding = !isHiding;
+                                            });
+                                          },
+                                          icon: isHiding
+                                              ? const Icon(Icons.visibility)
+                                              : const Icon(
+                                                  Icons.visibility_off),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.end,
+                                      children: [
+                                        TextButton(
+                                          onPressed: () {},
+                                          child: const Text('forgot password?'),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 10),
+                                    ElevatedButton(
+                                      onPressed: _loginWithEmailAndPasswrod,
+                                      style: ElevatedButton.styleFrom(
+                                        padding: const EdgeInsets.symmetric(
+                                            vertical:
+                                                20), // Adjust the button height
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(10),
+                                        ),
+                                      ),
+                                      child: Text(
+                                        'Login',
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .titleLarge!
+                                            .copyWith(color: Colors.white),
+                                      ),
+                                    )
+                                  ],
                                 ),
                               ),
-                              const SizedBox(height: 10),
-                              TextFormField(
-                                validator: (value) {
-                                  if (value!.isEmpty || value.length <= 6) {
-                                    return 'password must be greater than 6 characters';
-                                  }
-                                  return null;
-                                },
-                                onSaved: (value) {
-                                  _password = value!;
-                                },
-                                obscureText: isHiding,
-                                decoration: InputDecoration(
-                                  labelText: 'password',
-                                  border: const OutlineInputBorder(
-                                    borderRadius: BorderRadius.all(
-                                      Radius.circular(10),
-                                    ),
-                                  ),
-                                  prefixIcon: const Icon(Icons.lock_person),
-                                  suffixIcon: IconButton(
-                                    onPressed: () {
-                                      setState(() {
-                                        isHiding = !isHiding;
-                                      });
-                                    },
-                                    icon: isHiding
-                                        ? const Icon(Icons.visibility)
-                                        : const Icon(Icons.visibility_off),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 6),
+                              const SizedBox(height: 18),
+                              const Text('Or continue with'),
+                              const SizedBox(height: 36),
                               Row(
-                                mainAxisAlignment: MainAxisAlignment.end,
+                                mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  TextButton(
-                                    onPressed: () {},
-                                    child: const Text('forgot password?'),
+                                  GestureDetector(
+                                    onTap: _withGoogle,
+                                    child: const Image(
+                                      image:
+                                          AssetImage('assets/logo/google.png'),
+                                      width: 64,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 36),
+                                  GestureDetector(
+                                    onTap: _withFacebook,
+                                    child: const Image(
+                                      image: AssetImage(
+                                          'assets/logo/facebook.png'),
+                                      width: 64,
+                                    ),
                                   ),
                                 ],
                               ),
-                              const SizedBox(height: 10),
-                              ElevatedButton(
-                                onPressed: _loginWithEmailAndPasswrod,
-                                style: ElevatedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(
-                                      vertical: 20), // Adjust the button height
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                ),
-                                child: Text(
-                                  'Login',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .titleLarge!
-                                      .copyWith(color: Colors.white),
-                                ),
-                              )
                             ],
                           ),
                         ),
-                        const SizedBox(height: 16),
-                        const Text('Or continue with'),
-                        const SizedBox(height: 22),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            GestureDetector(
-                              onTap: _withGoogle,
-                              child: const Image(
-                                image: AssetImage('assets/logo/google.png'),
-                                width: 64,
-                              ),
-                            ),
-                            const SizedBox(width: 36),
-                            GestureDetector(
-                              onTap: _withFacebook,
-                              child: const Image(
-                                image: AssetImage('assets/logo/facebook.png'),
-                                width: 64,
-                              ),
-                            ),
-                          ],
-                        ),
                       ],
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-            Column(
+          ),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Column(
               children: [
                 const Divider(),
                 Row(
@@ -231,9 +247,9 @@ class _AuthScreenState extends State<AuthScreen> {
                   ],
                 ),
               ],
-            )
-          ],
-        ),
+            ),
+          )
+        ],
       ),
     );
   }
