@@ -28,6 +28,7 @@ class _RoomDetailsState extends State<RoomDetailsWidget> {
   String currentUser = FirebaseAuth.instance.currentUser!.uid;
   final _urlGroupData = ApiUrl.groupExpenseData;
   final _urlGroup = ApiUrl.groupExpense;
+  final _changeDataController = TextEditingController();
 
   @override
   void initState() {
@@ -102,12 +103,6 @@ class _RoomDetailsState extends State<RoomDetailsWidget> {
         title: GestureDetector(
           onLongPress: () {
             Clipboard.setData(ClipboardData(text: widget.room.groupId!));
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Group ID copied'),
-                duration: Duration(seconds: 1),
-              ),
-            );
           },
           child: Text(widget.room.groupId!),
         ),
@@ -117,9 +112,9 @@ class _RoomDetailsState extends State<RoomDetailsWidget> {
               borderRadius: BorderRadius.circular(25),
             ),
             itemBuilder: (context) => [
-              const PopupMenuItem(
-                onTap: null,
-                child: Text('Change Group Name'),
+              PopupMenuItem(
+                onTap: _showChangeName,
+                child: const Text('Change Group Name'),
               ),
             ],
           )
@@ -191,13 +186,27 @@ class _RoomDetailsState extends State<RoomDetailsWidget> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          TextButton(
-                            onPressed: () {},
-                            child: const Text(
-                              'Add Group Description',
-                              style: TextStyle(fontSize: 10),
-                            ),
-                          ),
+                          widget.room.roomDescription!.isEmpty
+                              ? TextButton(
+                                  onPressed: _showCreateDescription,
+                                  child: const Text(
+                                    'Add Group Description',
+                                    style: TextStyle(fontSize: 10),
+                                  ),
+                                )
+                              : InkWell(
+                                  onTap: () {
+                                    _showCreateDescription();
+                                  },
+                                  child: Text(
+                                    widget.room.roomDescription!,
+                                    style: TextStyle(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onBackground,
+                                    ),
+                                  ),
+                                ),
                           Text(
                             'Created by ${widget.room.username}, on ${DateFormat('dd-MM-yyyy').format(widget.room.createdDate!)}',
                             style: TextStyle(
@@ -323,16 +332,144 @@ class _RoomDetailsState extends State<RoomDetailsWidget> {
             barrierDismissible: false,
             context: context,
             builder: (context) {
-              return AlertDialog(
-                title: const Text('Room will be deleted soon, please wait'),
+              return const AlertDialog(
+                title: Text('Room will be deleted soon, please wait'),
                 actions: [
-                  TextButton(onPressed: () {}, child: const Text('Okay')),
+                  Text('Okay'),
                 ],
               );
             });
       }
     } catch (error) {
       showError('Faild to delete room');
+    }
+  }
+
+  void _showCreateDescription() {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.all(24),
+          width: double.infinity,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisSize: MainAxisSize.max,
+            children: [
+              TextField(
+                controller: _changeDataController,
+                maxLength: 50,
+                decoration: const InputDecoration(
+                  labelText: 'enter room description here...',
+                ),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.all(18),
+                  shape: const RoundedRectangleBorder(
+                    borderRadius: BorderRadius.all(
+                      Radius.circular(25),
+                    ),
+                  ),
+                  backgroundColor: Theme.of(context).colorScheme.secondary,
+                  foregroundColor: Theme.of(context).colorScheme.onSecondary,
+                ),
+                onPressed: addDesc,
+                child: const Text('Add Descritption'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  addDesc() async {
+    if (_changeDataController.text.isEmpty) {
+      Navigator.of(context).pop();
+    }
+
+    final url = Uri.parse(
+        '$_urlGroup/createDescription?desc=${_changeDataController.text}&groupId=${widget.room.groupId}');
+
+    try {
+      final response = await http.get(url);
+      if (response.statusCode == 200) {
+        final responseData = json.decode(response.body);
+        setState(() {
+          widget.room.setDesc(responseData['groupDescription']);
+        });
+        Navigator.of(context).pop();
+      }
+    } catch (error) {
+      showError('failed to add room description.');
+    } finally {
+      _changeDataController.clear();
+    }
+  }
+
+  void _showChangeName() {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.all(24),
+          width: double.infinity,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisSize: MainAxisSize.max,
+            children: [
+              TextField(
+                controller: _changeDataController,
+                maxLength: 30,
+                decoration: const InputDecoration(
+                  labelText: 'enter new room name here...',
+                ),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.all(18),
+                  shape: const RoundedRectangleBorder(
+                    borderRadius: BorderRadius.all(
+                      Radius.circular(25),
+                    ),
+                  ),
+                  backgroundColor: Theme.of(context).colorScheme.secondary,
+                  foregroundColor: Theme.of(context).colorScheme.onSecondary,
+                ),
+                onPressed: _changeName,
+                child: const Text('Change'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  _changeName() async {
+    if (_changeDataController.text.isEmpty) {
+      Navigator.of(context).pop();
+    }
+
+    final url = Uri.parse(
+        '$_urlGroup/changeGroupName?groupName=${_changeDataController.text}&groupId=${widget.room.groupId}');
+
+    try {
+      final response = await http.get(url);
+      if (response.statusCode == 200) {
+        final responseData = json.decode(response.body);
+        setState(() {
+          widget.room.setName(responseData['groupTitle']);
+        });
+        Navigator.of(context).pop();
+      }
+    } catch (error) {
+      showError('failed to add room description.');
+    } finally {
+      _changeDataController.clear();
     }
   }
 }

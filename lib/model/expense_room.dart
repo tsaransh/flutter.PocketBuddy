@@ -8,9 +8,17 @@ class ExpenseRoom {
       required this.username});
 
   final String? groupId;
-  final String? groupTitle;
+  String? groupTitle;
   final DateTime? createdDate;
   final String? userUid;
-  final String? roomDescription;
+  String? roomDescription;
   final String? username;
+
+  void setDesc(String desc) {
+    roomDescription = desc;
+  }
+
+  void setName(title) {
+    groupTitle = title;
+  }
 }

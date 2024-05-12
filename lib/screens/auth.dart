@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -21,8 +20,10 @@ class _AuthScreenState extends State<AuthScreen> {
   late UserCredential userCredentials;
 
   // login variables
-  late String _email;
-  late String _password;
+  String _email = "";
+  String _password = "";
+
+  final emailController = TextEditingController();
 
   _loginWithEmailAndPasswrod() async {
     final isValid = _formKey.currentState!.validate();
@@ -68,6 +69,72 @@ class _AuthScreenState extends State<AuthScreen> {
     return null;
   }
 
+  _showForgotPassword() {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        return Container(
+          width: double.infinity,
+          height: double.infinity,
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              TextFormField(
+                controller: emailController,
+                validator: (value) {
+                  if (value.toString().trim().isEmpty || value == null) {
+                    return 'Please enter your email.';
+                  }
+                  if (!value.toString().contains('@')) {
+                    return 'Please enter a valid email.';
+                  }
+                  return null;
+                },
+                onSaved: (value) {
+                  _email = value.toString();
+                },
+                decoration: const InputDecoration(
+                    prefixIcon: Icon(Icons.email),
+                    labelText: 'enter your email here...'),
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor:
+                        Theme.of(context).colorScheme.secondaryContainer,
+                    padding: const EdgeInsets.all(16),
+                    foregroundColor:
+                        Theme.of(context).colorScheme.onSecondaryContainer,
+                    shape: const RoundedRectangleBorder(
+                      borderRadius: BorderRadius.all(
+                        Radius.circular(25),
+                      ),
+                    ),
+                  ),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    _forgotPassword();
+                  },
+                  child: const Text('Reset Password'))
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  _forgotPassword() {
+    FirebaseAuth.instance.sendPasswordResetEmail(email: emailController.text);
+    ScaffoldMessenger.of(context).clearSnackBars();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Reset password link send to ${emailController.text}'),
+        duration: const Duration(seconds: 4),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -103,6 +170,7 @@ class _AuthScreenState extends State<AuthScreen> {
                                       CrossAxisAlignment.stretch,
                                   children: [
                                     TextFormField(
+                                      controller: emailController,
                                       validator: (value) {
                                         if (value!.isEmpty ||
                                             !value.contains('@')) {
@@ -163,7 +231,7 @@ class _AuthScreenState extends State<AuthScreen> {
                                       mainAxisAlignment: MainAxisAlignment.end,
                                       children: [
                                         TextButton(
-                                          onPressed: () {},
+                                          onPressed: _showForgotPassword,
                                           child: const Text('forgot password?'),
                                         ),
                                       ],

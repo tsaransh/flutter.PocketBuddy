@@ -218,7 +218,7 @@ class _JoinGroupScreenState extends State<JoinGroupScreen> {
         createdDate: DateTime.parse(responseData['createdDate']),
         userUid: responseData['userUid'],
         username: responseData['creatorName'],
-        roomDescription: '',
+        roomDescription: responseData['groupDescription'],
       );
 
       return room;

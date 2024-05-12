@@ -137,7 +137,7 @@ class _PersonalExpenseScreenState extends State<PersonalExpenseScreen> {
                 keyboardType: TextInputType.number,
                 decoration: const InputDecoration(
                   prefixIcon: Icon(
-                    IconData(0xf04e1, fontFamily: 'MaterialIcons'),
+                    Icons.currency_rupee,
                   ),
                   labelText: 'Enter Amount',
                 ),

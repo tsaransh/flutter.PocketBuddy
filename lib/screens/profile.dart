@@ -54,7 +54,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         }
       }
     } catch (error) {
-      print(error);
       showError('failed to fetch group');
     } finally {
       setState(() {
